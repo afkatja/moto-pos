@@ -1,9 +1,9 @@
-import { ModuleConfig } from './types.ts'
+import type { ModuleConfig } from "./types/index.js"
 
 export const defaultConfig: ModuleConfig = {
   maxAmountCents: 1_000_000,
-  allowedCurrencies: ['usd', 'eur', 'gbp', 'crc'],
-  idempotencyPrefix: 'booking-vcc',
+  allowedCurrencies: ["usd", "eur", "gbp", "crc"],
+  idempotencyPrefix: "booking-vcc",
 }
 
 export function getConfigFromEnv(): Partial<ModuleConfig> {
@@ -14,7 +14,9 @@ export function getConfigFromEnv(): Partial<ModuleConfig> {
   }
 
   if (process.env.MOTO_POS_ALLOWED_CURRENCIES) {
-    config.allowedCurrencies = process.env.MOTO_POS_ALLOWED_CURRENCIES.split(',').map(c => c.trim().toLowerCase())
+    config.allowedCurrencies = process.env.MOTO_POS_ALLOWED_CURRENCIES.split(
+      ",",
+    ).map(c => c.trim().toLowerCase())
   }
 
   if (process.env.MOTO_POS_IDEMPOTENCY_PREFIX) {

@@ -1,9 +1,13 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { IdempotencyStore, IdempotencyRecord, SupabaseIdempotencyStoreOptions } from '../types.ts'
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import type {
+  IdempotencyStore,
+  IdempotencyRecord,
+  SupabaseIdempotencyStoreOptions,
+} from "../types/index.js"
 
 export type { SupabaseIdempotencyStoreOptions }
 
-const DEFAULT_TABLE = 'moto_pos_idempotency_keys'
+const DEFAULT_TABLE = "moto_pos_idempotency_keys"
 
 export class SupabaseIdempotencyStore implements IdempotencyStore {
   private supabase: SupabaseClient
@@ -22,10 +26,10 @@ export class SupabaseIdempotencyStore implements IdempotencyStore {
   }
 
   async initialize(): Promise<void> {
-    const { error } = await this.supabase.rpc('create_idempotency_table', {
+    const { error } = await this.supabase.rpc("create_idempotency_table", {
       table_name: this.tableName,
     })
-    if (error && !error.message.includes('already exists')) {
+    if (error && !error.message.includes("already exists")) {
       throw error
     }
   }
@@ -33,8 +37,8 @@ export class SupabaseIdempotencyStore implements IdempotencyStore {
   async get(key: string): Promise<IdempotencyRecord | null> {
     const { data, error } = await this.supabase
       .from(this.tableName)
-      .select('*')
-      .eq('key', key)
+      .select("*")
+      .eq("key", key)
       .single()
 
     if (error || !data) return null
@@ -45,10 +49,12 @@ export class SupabaseIdempotencyStore implements IdempotencyStore {
     return this.mapRow(data)
   }
 
-  async set(key: string, record: Omit<IdempotencyRecord, 'key'>): Promise<void> {
-    const { error } = await this.supabase
-      .from(this.tableName)
-      .upsert({
+  async set(
+    key: string,
+    record: Omit<IdempotencyRecord, "key">,
+  ): Promise<void> {
+    const { error } = await this.supabase.from(this.tableName).upsert(
+      {
         key,
         status: record.status,
         payment_intent_id: record.paymentIntentId ?? null,
@@ -58,9 +64,11 @@ export class SupabaseIdempotencyStore implements IdempotencyStore {
         created_at: record.createdAt,
         updated_at: record.updatedAt,
         expires_at: record.expiresAt,
-      }, {
-        onConflict: 'key',
-      })
+      },
+      {
+        onConflict: "key",
+      },
+    )
     if (error) throw error
   }
 
@@ -68,16 +76,16 @@ export class SupabaseIdempotencyStore implements IdempotencyStore {
     const { error } = await this.supabase
       .from(this.tableName)
       .delete()
-      .eq('key', key)
+      .eq("key", key)
     if (error) throw error
   }
 
   async exists(key: string): Promise<boolean> {
     const { data, error } = await this.supabase
       .from(this.tableName)
-      .select('key')
-      .eq('key', key)
-      .gt('expires_at', Date.now())
+      .select("key")
+      .eq("key", key)
+      .gt("expires_at", Date.now())
       .single()
     return !error && !!data
   }
@@ -86,7 +94,7 @@ export class SupabaseIdempotencyStore implements IdempotencyStore {
     const { count, error } = await this.supabase
       .from(this.tableName)
       .delete()
-      .lt('expires_at', Date.now())
+      .lt("expires_at", Date.now())
     if (error) throw error
     return count ?? 0
   }

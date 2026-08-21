@@ -7,11 +7,11 @@ import type {
   ChargeInput,
   ValidationError,
   IdempotencyStore,
-} from '../types.ts'
-import { mergeConfig } from '../config.ts'
-import { createMotoPaymentIntent } from '../adapters/stripe-adapter.ts'
-import { validateChargeInput } from '../core/validation.ts'
-import { createCharge } from '../core/createCharge.ts'
+} from "../types/index.js"
+import { mergeConfig } from "../config.ts"
+import { createMotoPaymentIntent } from "../adapters/stripe-adapter.ts"
+import { validateChargeInput } from "../core/validation.ts"
+import { createCharge } from "../core/createCharge.ts"
 
 export interface HandleChargeOptions {
   stripe: StripeClient
@@ -22,12 +22,12 @@ export interface HandleChargeOptions {
 
 export async function handleChargeRequest(
   req: HttpRequestLike,
-  options: HandleChargeOptions
+  options: HandleChargeOptions,
 ): Promise<HttpResponseLike> {
   const config = mergeConfig(options.config)
 
-  if (req.method !== 'POST') {
-    return { status: 405, body: { error: 'Method not allowed' } }
+  if (req.method !== "POST") {
+    return { status: 405, body: { error: "Method not allowed" } }
   }
 
   try {
@@ -36,7 +36,7 @@ export async function handleChargeRequest(
     const err = error as { status?: number; message?: string }
     return {
       status: err.status || 500,
-      body: { error: err.message || 'Authentication failed' },
+      body: { error: err.message || "Authentication failed" },
     }
   }
 
@@ -44,31 +44,36 @@ export async function handleChargeRequest(
   try {
     body = await req.json()
   } catch {
-    return { status: 400, body: { error: 'Invalid JSON body' } }
+    return { status: 400, body: { error: "Invalid JSON body" } }
   }
 
   const errors = validateChargeInput(body, config)
   if (errors.length > 0) {
     return {
       status: 400,
-      body: { error: 'Validation failed', details: errors },
+      body: { error: "Validation failed", details: errors },
     }
   }
 
   const input = body as ChargeInput
 
   try {
-    const result = await createCharge(input, options.stripe, config, options.idempotencyStore)
+    const result = await createCharge(
+      input,
+      options.stripe,
+      config,
+      options.idempotencyStore,
+    )
 
-    if (result.status === 'succeeded') {
+    if (result.status === "succeeded") {
       return { status: 200, body: { paymentIntentId: result.paymentIntentId } }
     }
 
-    if (result.status === 'requires_action') {
+    if (result.status === "requires_action") {
       return {
         status: 422,
         body: {
-          error: 'Payment requires additional authentication (3D Secure)',
+          error: "Payment requires additional authentication (3D Secure)",
           status: result.status,
           clientSecret: result.clientSecret,
           paymentIntentId: result.paymentIntentId,
@@ -85,23 +90,27 @@ export async function handleChargeRequest(
       },
     }
   } catch (error: unknown) {
-    const err = error as { validationErrors?: ValidationError[]; type?: string; message?: string }
+    const err = error as {
+      validationErrors?: ValidationError[]
+      type?: string
+      message?: string
+    }
     if (err.validationErrors) {
       return {
         status: 400,
-        body: { error: 'Validation failed', details: err.validationErrors },
+        body: { error: "Validation failed", details: err.validationErrors },
       }
     }
 
-    if (err.type === 'StripeCardError') {
-      return { status: 402, body: { error: err.message || 'Card error' } }
+    if (err.type === "StripeCardError") {
+      return { status: 402, body: { error: err.message || "Card error" } }
     }
 
-    if (err.type === 'StripeInvalidRequestError') {
-      return { status: 400, body: { error: err.message || 'Invalid request' } }
+    if (err.type === "StripeInvalidRequestError") {
+      return { status: 400, body: { error: err.message || "Invalid request" } }
     }
 
-    console.error('Charge request error:', error)
-    return { status: 500, body: { error: 'Internal server error' } }
+    console.error("Charge request error:", error)
+    return { status: 500, body: { error: "Internal server error" } }
   }
 }

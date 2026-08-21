@@ -1,9 +1,13 @@
-import { Pool, PoolConfig } from 'pg'
-import { IdempotencyStore, IdempotencyRecord, PostgresIdempotencyStoreOptions } from '../types.ts'
+import { Pool, PoolConfig } from "pg"
+import type {
+  IdempotencyStore,
+  IdempotencyRecord,
+  PostgresIdempotencyStoreOptions,
+} from "../types/index.js"
 
 export type { PostgresIdempotencyStoreOptions }
 
-const DEFAULT_TABLE = 'moto_pos_idempotency_keys'
+const DEFAULT_TABLE = "moto_pos_idempotency_keys"
 
 export class PostgresIdempotencyStore implements IdempotencyStore {
   private pool: Pool
@@ -39,7 +43,7 @@ export class PostgresIdempotencyStore implements IdempotencyStore {
   async get(key: string): Promise<IdempotencyRecord | null> {
     const result = await this.pool.query(
       `SELECT * FROM ${this.tableName} WHERE key = $1`,
-      [key]
+      [key],
     )
     if (result.rows.length === 0) return null
     const row = result.rows[0]
@@ -50,7 +54,10 @@ export class PostgresIdempotencyStore implements IdempotencyStore {
     return this.mapRow(row)
   }
 
-  async set(key: string, record: Omit<IdempotencyRecord, 'key'>): Promise<void> {
+  async set(
+    key: string,
+    record: Omit<IdempotencyRecord, "key">,
+  ): Promise<void> {
     await this.pool.query(
       `INSERT INTO ${this.tableName} (key, status, payment_intent_id, client_secret, amount, currency, created_at, updated_at, expires_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -72,7 +79,7 @@ export class PostgresIdempotencyStore implements IdempotencyStore {
         record.createdAt,
         record.updatedAt,
         record.expiresAt,
-      ]
+      ],
     )
   }
 
@@ -83,7 +90,7 @@ export class PostgresIdempotencyStore implements IdempotencyStore {
   async exists(key: string): Promise<boolean> {
     const result = await this.pool.query(
       `SELECT 1 FROM ${this.tableName} WHERE key = $1 AND expires_at > $2`,
-      [key, Date.now()]
+      [key, Date.now()],
     )
     return result.rows.length > 0
   }
@@ -91,7 +98,7 @@ export class PostgresIdempotencyStore implements IdempotencyStore {
   async cleanup(): Promise<number> {
     const result = await this.pool.query(
       `DELETE FROM ${this.tableName} WHERE expires_at < $1`,
-      [Date.now()]
+      [Date.now()],
     )
     return result.rowCount ?? 0
   }

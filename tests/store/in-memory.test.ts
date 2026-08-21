@@ -35,7 +35,7 @@ describe('InMemoryIdempotencyStore', () => {
   it('returns null for non-existent key', async () => {
     const result = await store.get('non-existent')
     expect(result).toBeNull()
-  }
+  })
 
   it('returns null for expired record', async () => {
     const storeWithShortTtl = new InMemoryIdempotencyStore({ defaultTtlMs: 10, cleanupIntervalMs: 5 })

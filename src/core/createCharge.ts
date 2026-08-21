@@ -1,21 +1,30 @@
-import { ChargeInput, ChargeResult, ModuleConfig, StripeClient, IdempotencyRecord, IdempotencyStore } from '../types.ts'
-import { validateChargeInput } from './validation.ts'
+import type {
+  ChargeInput,
+  ChargeResult,
+  ModuleConfig,
+  StripeClient,
+  IdempotencyRecord,
+  IdempotencyStore,
+} from "../types/index.js"
+import { validateChargeInput } from "./validation.ts"
 
-const mapStatus = (stripeStatus: string): 'succeeded' | 'requires_action' | 'failed' | 'pending' => {
+const mapStatus = (
+  stripeStatus: string,
+): "succeeded" | "requires_action" | "failed" | "pending" => {
   switch (stripeStatus) {
-    case 'succeeded':
-      return 'succeeded';
-    case 'requires_action':
-      return 'requires_action';
-    case 'requires_payment_method':
-    case 'requires_confirmation':
-    case 'requires_capture':
-    case 'processing':
-      return 'pending';
-    case 'canceled':
-      return 'failed';
+    case "succeeded":
+      return "succeeded"
+    case "requires_action":
+      return "requires_action"
+    case "requires_payment_method":
+    case "requires_confirmation":
+    case "requires_capture":
+    case "processing":
+      return "pending"
+    case "canceled":
+      return "failed"
     default:
-      return 'failed';
+      return "failed"
   }
 }
 
@@ -23,32 +32,44 @@ export async function createCharge(
   input: ChargeInput,
   stripe: StripeClient,
   config: ModuleConfig,
-  idempotencyStore?: IdempotencyStore
+  idempotencyStore?: IdempotencyStore,
 ): Promise<ChargeResult> {
   const errors = validateChargeInput(input, config)
   if (errors.length > 0) {
-    const error = new Error('Validation failed') as Error & { validationErrors: typeof errors }
+    const error = new Error("Validation failed") as Error & {
+      validationErrors: typeof errors
+    }
     error.validationErrors = errors
     throw error
   }
 
-  const { amount, currency, paymentMethodId, idempotencyKey, description, metadata } = input
+  const {
+    amount,
+    currency,
+    paymentMethodId,
+    idempotencyKey,
+    description,
+    metadata,
+  } = input
 
   if (idempotencyStore) {
     const existing = await idempotencyStore.get(idempotencyKey)
     if (existing) {
-      if (existing.status === 'succeeded') {
-        return { paymentIntentId: existing.paymentIntentId!, status: 'succeeded' }
-      }
-      if (existing.status === 'requires_action') {
+      if (existing.status === "succeeded") {
         return {
           paymentIntentId: existing.paymentIntentId!,
-          status: 'requires_action',
+          status: "succeeded",
+        }
+      }
+      if (existing.status === "requires_action") {
+        return {
+          paymentIntentId: existing.paymentIntentId!,
+          status: "requires_action",
           clientSecret: existing.clientSecret,
         }
       }
-      if (existing.status === 'failed') {
-        return { paymentIntentId: existing.paymentIntentId!, status: 'failed' }
+      if (existing.status === "failed") {
+        return { paymentIntentId: existing.paymentIntentId!, status: "failed" }
       }
     }
   }
@@ -59,7 +80,7 @@ export async function createCharge(
       currency: currency.toLowerCase(),
       payment_method: paymentMethodId,
       confirm: true,
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       payment_method_options: {
         card: {
           moto: true,
@@ -68,11 +89,11 @@ export async function createCharge(
       description,
       metadata,
     },
-    { idempotencyKey }
+    { idempotencyKey },
   )
 
   const now = Date.now()
-  const mappedStatus = mapStatus(intent.status);
+  const mappedStatus = mapStatus(intent.status)
 
   const record: IdempotencyRecord = {
     key: idempotencyKey,
@@ -90,6 +111,13 @@ export async function createCharge(
     await idempotencyStore.set(idempotencyKey, record)
   }
 
-  const finalStatus = mappedStatus === 'pending' ? 'failed' : mappedStatus
-  return { paymentIntentId: intent.id, status: finalStatus as 'succeeded' | 'requires_action' | 'failed' }
+  const finalStatus = mappedStatus === "pending" ? "failed" : mappedStatus
+  const result: ChargeResult = {
+    paymentIntentId: intent.id,
+    status: finalStatus as "succeeded" | "requires_action" | "failed",
+  }
+  if (finalStatus === "requires_action" && intent.client_secret) {
+    result.clientSecret = intent.client_secret
+  }
+  return result
 }

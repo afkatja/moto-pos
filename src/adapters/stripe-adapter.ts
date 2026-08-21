@@ -1,5 +1,5 @@
-import Stripe from 'stripe'
-import type { StripeClient, ChargeInput, ChargeResult } from '../types.ts'
+import Stripe from "stripe"
+import type { StripeClient, ChargeInput, ChargeResult } from "../types/index.js"
 
 export function createStripeAdapter(apiKey: string): StripeClient {
   const stripe = new Stripe(apiKey, {
@@ -12,9 +12,16 @@ export function createStripeAdapter(apiKey: string): StripeClient {
 
 export async function createMotoPaymentIntent(
   input: ChargeInput,
-  stripe: StripeClient
+  stripe: StripeClient,
 ): Promise<ChargeResult> {
-  const { amount, currency, paymentMethodId, idempotencyKey, description, metadata } = input
+  const {
+    amount,
+    currency,
+    paymentMethodId,
+    idempotencyKey,
+    description,
+    metadata,
+  } = input
 
   const intent = await stripe.paymentIntents.create(
     {
@@ -22,7 +29,7 @@ export async function createMotoPaymentIntent(
       currency: currency.toLowerCase(),
       payment_method: paymentMethodId,
       confirm: true,
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       payment_method_options: {
         card: {
           moto: true,
@@ -31,20 +38,20 @@ export async function createMotoPaymentIntent(
       description,
       metadata,
     },
-    { idempotencyKey }
+    { idempotencyKey },
   )
 
-  if (intent.status === 'succeeded') {
-    return { paymentIntentId: intent.id, status: 'succeeded' }
+  if (intent.status === "succeeded") {
+    return { paymentIntentId: intent.id, status: "succeeded" }
   }
 
-  if (intent.status === 'requires_action') {
+  if (intent.status === "requires_action") {
     return {
       paymentIntentId: intent.id,
-      status: 'requires_action',
+      status: "requires_action",
       clientSecret: intent.client_secret ?? undefined,
     }
   }
 
-  return { paymentIntentId: intent.id, status: 'failed' }
+  return { paymentIntentId: intent.id, status: "failed" }
 }

@@ -1,5 +1,9 @@
-import { createClient, RedisClientType } from 'redis'
-import { IdempotencyStore, IdempotencyRecord, RedisIdempotencyStoreOptions } from '../types.ts'
+import { createClient, RedisClientType } from "redis"
+import type {
+  IdempotencyStore,
+  IdempotencyRecord,
+  RedisIdempotencyStoreOptions,
+} from "../types/index.js"
 
 export type { RedisIdempotencyStoreOptions }
 
@@ -10,7 +14,7 @@ export class RedisIdempotencyStore implements IdempotencyStore {
 
   constructor(options: RedisIdempotencyStoreOptions) {
     this.client = createClient({ url: options.url }) as RedisClientType
-    this.keyPrefix = options.keyPrefix ?? 'moto-pos:idempotency:'
+    this.keyPrefix = options.keyPrefix ?? "moto-pos:idempotency:"
     this.defaultTtlMs = options.defaultTtlMs ?? 24 * 60 * 60 * 1000
   }
 
@@ -37,10 +41,17 @@ export class RedisIdempotencyStore implements IdempotencyStore {
     return record
   }
 
-  async set(key: string, record: Omit<IdempotencyRecord, 'key'>): Promise<void> {
+  async set(
+    key: string,
+    record: Omit<IdempotencyRecord, "key">,
+  ): Promise<void> {
     const ttlSeconds = Math.ceil((record.expiresAt - Date.now()) / 1000)
     if (ttlSeconds <= 0) return
-    await this.client.setEx(this.getKey(key), ttlSeconds, JSON.stringify({ ...record, key }))
+    await this.client.setEx(
+      this.getKey(key),
+      ttlSeconds,
+      JSON.stringify({ ...record, key }),
+    )
   }
 
   async delete(key: string): Promise<void> {

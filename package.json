@@ -26,27 +26,48 @@
       "import": "./dist/store/index.mjs",
       "require": "./dist/store/index.js",
       "types": "./dist/store/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types/index.mjs",
+      "require": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./strings": {
+      "import": "./dist/strings/index.mjs",
+      "require": "./dist/strings/index.js",
+      "types": "./dist/strings/index.d.ts"
     }
   },
   "scripts": {
     "build": "tsc",
+    "dev": "vitest --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:build": "typedoc && vitepress build docs && cp -r docs/api docs/.vitepress/dist/",
+    "docs:preview": "vitepress preview docs",
+    "docs:api": "typedoc"
   },
   "peerDependencies": {
     "react": ">=18",
     "stripe": ">=14"
   },
   "peerDependenciesMeta": {
-    "pg": { "optional": true },
-    "redis": { "optional": true },
-    "@supabase/supabase-js": { "optional": true },
-    "next": { "optional": true }
+    "pg": {
+      "optional": true
+    },
+    "redis": {
+      "optional": true
+    },
+    "@supabase/supabase-js": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -61,6 +82,7 @@
     "pg": "^8.11.3",
     "redis": "^4.6.10",
     "stripe": "^14.0.0",
+    "typedoc": "^0.28.20",
     "typescript": "^5.3.0",
     "typescript-eslint": "^8.67.0",
     "vitepress": "^1.0.0",

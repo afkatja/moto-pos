@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-import type { AuthProvider, AuthUser, HttpRequestLike } from '../types.ts'
+import { createClient } from "@supabase/supabase-js"
+import type { AuthProvider, AuthUser, HttpRequestLike } from "../types/index.js"
 
 interface JWTPayload {
   sub: string
@@ -18,9 +18,9 @@ interface JWTPayload {
 
 function parseJWT(token: string): JWTPayload | null {
   try {
-    const parts = token.split('.')
+    const parts = token.split(".")
     if (parts.length !== 3 || !parts[1]) return null
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString())
+    const payload = JSON.parse(Buffer.from(parts[1], "base64").toString())
     return payload as JWTPayload
   } catch {
     return null
@@ -29,16 +29,16 @@ function parseJWT(token: string): JWTPayload | null {
 
 function extractAdminFromJWT(payload: JWTPayload): boolean {
   const role = payload.app_metadata?.role
-  if (role === 'admin') return true
+  if (role === "admin") return true
   const roles = payload.app_metadata?.roles
-  if (Array.isArray(roles) && roles.includes('admin')) return true
+  if (Array.isArray(roles) && roles.includes("admin")) return true
   return false
 }
 
 export function createSupabaseAuthProvider(
   supabaseUrl: string,
   serviceRoleKey: string,
-  jwtSecret?: string
+  jwtSecret?: string,
 ): AuthProvider {
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
@@ -48,9 +48,11 @@ export function createSupabaseAuthProvider(
   })
 
   async function verifyUser(req: HttpRequestLike): Promise<AuthUser> {
-    const authHeader = req.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      const error = new Error('Missing or invalid authorization header') as Error & { status: number }
+    const authHeader = req.headers.get("authorization")
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      const error = new Error(
+        "Missing or invalid authorization header",
+      ) as Error & { status: number }
       error.status = 401
       throw error
     }
@@ -67,14 +69,18 @@ export function createSupabaseAuthProvider(
             isAdmin: extractAdminFromJWT(payload),
           }
         }
-      } catch {
-      }
+      } catch {}
     }
 
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+    const {
+      data: { user },
+      error,
+    } = await supabaseAdmin.auth.getUser(token)
 
     if (error || !user) {
-      const authError = new Error('Invalid or expired token') as Error & { status: number }
+      const authError = new Error("Invalid or expired token") as Error & {
+        status: number
+      }
       authError.status = 401
       throw authError
     }
@@ -82,7 +88,7 @@ export function createSupabaseAuthProvider(
     const isAdmin = extractAdminFromJWT({
       sub: user.id,
       email: user.email,
-      app_metadata: user.app_metadata as JWTPayload['app_metadata'],
+      app_metadata: user.app_metadata as JWTPayload["app_metadata"],
     })
 
     return {
@@ -95,7 +101,9 @@ export function createSupabaseAuthProvider(
   async function verifyAdmin(req: HttpRequestLike): Promise<AuthUser> {
     const user = await verifyUser(req)
     if (!user.isAdmin) {
-      const forbiddenError = new Error('Admin access required') as Error & { status: number }
+      const forbiddenError = new Error("Admin access required") as Error & {
+        status: number
+      }
       forbiddenError.status = 403
       throw forbiddenError
     }

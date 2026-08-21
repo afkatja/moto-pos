@@ -1,4 +1,8 @@
-import { IdempotencyStore, IdempotencyRecord, InMemoryIdempotencyStoreOptions } from '../types.ts'
+import type {
+  IdempotencyStore,
+  IdempotencyRecord,
+  InMemoryIdempotencyStoreOptions,
+} from "../types/index.js"
 
 export type { InMemoryIdempotencyStoreOptions }
 
@@ -10,7 +14,10 @@ export class InMemoryIdempotencyStore implements IdempotencyStore {
   constructor(options: InMemoryIdempotencyStoreOptions = {}) {
     this.defaultTtlMs = options.defaultTtlMs ?? 24 * 60 * 60 * 1000
     if (options.cleanupIntervalMs) {
-      this.cleanupInterval = setInterval(() => this.cleanup(), options.cleanupIntervalMs)
+      this.cleanupInterval = setInterval(
+        () => this.cleanup(),
+        options.cleanupIntervalMs,
+      )
     }
   }
 
@@ -24,7 +31,10 @@ export class InMemoryIdempotencyStore implements IdempotencyStore {
     return record
   }
 
-  async set(key: string, record: Omit<IdempotencyRecord, 'key'>): Promise<void> {
+  async set(
+    key: string,
+    record: Omit<IdempotencyRecord, "key">,
+  ): Promise<void> {
     this.store.set(key, { ...record, key })
   }
 

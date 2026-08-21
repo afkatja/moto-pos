@@ -21,11 +21,11 @@
     "jsxImportSource": "react",
     "allowImportingTsExtensions": true,
     "paths": {
-      "*": ["/*"],
+      "*": ["./*"],
       "@moto-pos/core": ["./src"],
       "@moto-pos/core/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["./src/**/*", "./*.d.ts"],
   "exclude": ["node_modules", "dist", "tests"]
 }

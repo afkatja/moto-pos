@@ -1,4 +1,6 @@
 // Main types entry point - all types are defined in this file
+import type Stripe from 'stripe'
+
 export interface ChargeInput {
   amount: number
   currency: string

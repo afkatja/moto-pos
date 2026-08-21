@@ -1,58 +1,81 @@
-import { ModuleConfig, ValidationError } from '../types.ts'
+import type { ModuleConfig, ValidationError } from "../types/index.js"
 
-export function validateAmount(amount: unknown, config: ModuleConfig): ValidationError | null {
-  if (typeof amount !== 'number' || !Number.isInteger(amount)) {
-    return { field: 'amount', message: 'Amount must be an integer' }
+export function validateAmount(
+  amount: unknown,
+  config: ModuleConfig,
+): ValidationError | null {
+  if (typeof amount !== "number" || !Number.isInteger(amount)) {
+    return { field: "amount", message: "Amount must be an integer" }
   }
   if (amount <= 0) {
-    return { field: 'amount', message: 'Amount must be positive' }
+    return { field: "amount", message: "Amount must be positive" }
   }
   if (amount > config.maxAmountCents) {
-    return { field: 'amount', message: `Amount exceeds maximum of ${config.maxAmountCents} cents` }
-  }
-  return null
-}
-
-export function validateCurrency(currency: unknown, config: ModuleConfig): ValidationError | null {
-  if (typeof currency !== 'string') {
-    return { field: 'currency', message: 'Currency must be a string' }
-  }
-  const normalized = currency.toLowerCase()
-  if (!config.allowedCurrencies.includes(normalized)) {
     return {
-      field: 'currency',
-      message: `Currency must be one of: ${config.allowedCurrencies.map((c: string) => c.toUpperCase()).join(', ')}`,
+      field: "amount",
+      message: `Amount exceeds maximum of ${config.maxAmountCents} cents`,
     }
   }
   return null
 }
 
-export function validatePaymentMethodId(paymentMethodId: unknown): ValidationError | null {
-  if (typeof paymentMethodId !== 'string' || !paymentMethodId.startsWith('pm_')) {
-    return { field: 'paymentMethodId', message: 'Invalid payment method ID' }
+export function validateCurrency(
+  currency: unknown,
+  config: ModuleConfig,
+): ValidationError | null {
+  if (typeof currency !== "string") {
+    return { field: "currency", message: "Currency must be a string" }
+  }
+  const normalized = currency.toLowerCase()
+  if (!config.allowedCurrencies.includes(normalized)) {
+    return {
+      field: "currency",
+      message: `Currency must be one of: ${config.allowedCurrencies.map((c: string) => c.toUpperCase()).join(", ")}`,
+    }
   }
   return null
 }
 
-export function validateIdempotencyKey(idempotencyKey: unknown, config: ModuleConfig): ValidationError | null {
-  if (typeof idempotencyKey !== 'string') {
-    return { field: 'idempotencyKey', message: 'Idempotency key must be a string' }
+export function validatePaymentMethodId(
+  paymentMethodId: unknown,
+): ValidationError | null {
+  if (
+    typeof paymentMethodId !== "string" ||
+    !paymentMethodId.startsWith("pm_")
+  ) {
+    return { field: "paymentMethodId", message: "Invalid payment method ID" }
+  }
+  return null
+}
+
+export function validateIdempotencyKey(
+  idempotencyKey: unknown,
+  config: ModuleConfig,
+): ValidationError | null {
+  if (typeof idempotencyKey !== "string") {
+    return {
+      field: "idempotencyKey",
+      message: "Idempotency key must be a string",
+    }
   }
   const expectedPrefix = `${config.idempotencyPrefix}:`
   if (!idempotencyKey.startsWith(expectedPrefix)) {
     return {
-      field: 'idempotencyKey',
+      field: "idempotencyKey",
       message: `Idempotency key must start with "${expectedPrefix}"`,
     }
   }
   return null
 }
 
-export function validateChargeInput(input: unknown, config: ModuleConfig): ValidationError[] {
+export function validateChargeInput(
+  input: unknown,
+  config: ModuleConfig,
+): ValidationError[] {
   const errors: ValidationError[] = []
 
-  if (!input || typeof input !== 'object') {
-    return [{ field: 'root', message: 'Request body must be an object' }]
+  if (!input || typeof input !== "object") {
+    return [{ field: "root", message: "Request body must be an object" }]
   }
 
   const body = input as Record<string, unknown>
