@@ -29,6 +29,12 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+      - name: Show versions
+        run: |
+          node --version
+          npm --version
+          npm pkg get name version
+          node -p "require('./package-lock.json').lockfileVersion"
 
       - name: Install dependencies
         run: npm ci
