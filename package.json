@@ -47,7 +47,7 @@
     "type-check:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "typedoc && vitepress build docs && cp -r docs/api docs/.vitepress/dist/",
+    "docs:build": "typedoc && vitepress build docs && cp -r docs/api docs/.vitepress/dist/ && cp docs/ui-preview.html docs/.vitepress/dist/",
     "docs:preview": "vitepress preview docs",
     "docs:api": "typedoc"
   },

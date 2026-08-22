@@ -6,6 +6,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
+      { text: 'UI Preview', link: '/ui-preview.html' },
       { text: 'API Reference', link: '/api/' },
       { text: 'HTTP API', link: '/http-api' },
       { text: 'Theming', link: '/theming' },
@@ -17,6 +18,7 @@ export default defineConfig({
         { text: 'Idempotency Stores', link: '/guide/idempotency' },
         { text: 'React Components', link: '/guide/react-components' },
         { text: 'Supabase Auth', link: '/guide/supabase-auth' },
+        { text: 'UI Preview', link: '/ui-preview.html' },
       ],
       '/api/': [
         { text: 'Core', link: '/api/core' },
