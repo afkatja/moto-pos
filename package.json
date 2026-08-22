@@ -40,7 +40,7 @@
     }
   },
   "scripts": {
-    "build": "tsc && cp src/tokens/tokens.css dist/tokens/tokens.css",
+    "build": "tsc && mkdir -p dist/tokens && cp src/tokens/tokens.css dist/tokens/tokens.css",
     "dev": "vitest --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -48,7 +48,7 @@
     "type-check:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "typedoc && vitepress build docs && cp -r docs/api docs/.vitepress/dist/ && cp docs/ui-preview.html docs/.vitepress/dist/",
+    "docs:build": "typedoc && vitepress build docs && cp -r docs/api docs/.vitepress/dist/",
     "docs:preview": "vitepress preview docs",
     "docs:api": "typedoc"
   },

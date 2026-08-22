@@ -1,10 +1,10 @@
-import DefaultTheme from 'vitepress/theme'
-import '@moto-pos/core/tokens.css'
-import MotoChargePanel from '../components/MotoChargePanel.vue'
+import DefaultTheme from "vitepress/theme"
+import "../../../src/tokens/index.css"
+import MotoChargePanel from "../components/MotoChargePanel.vue"
 
 export default {
   extends: DefaultTheme,
-  enhanceApp({ app }) {
-    app.component('MotoChargePanel', MotoChargePanel)
+  enhanceApp({ app }: { app: any }) {
+    app.component("MotoChargePanel", MotoChargePanel)
   },
 }
