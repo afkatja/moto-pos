@@ -1,5 +1,5 @@
 import DefaultTheme from "vitepress/theme"
-import "@moto-pos/core/tokens.css"
+import "../../../src/tokens/tokens.css"
 import MotoChargePanel from "../components/MotoChargePanel.vue"
 
 export default {
