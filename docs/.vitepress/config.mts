@@ -1,6 +1,7 @@
 import { defineConfig } from "vitepress"
 
 export default defineConfig({
+  base: "/moto-pos/",
   title: "@moto-pos/core",
   description: "Standalone MOTO POS module for Stripe payment processing",
   themeConfig: {
