@@ -37,7 +37,7 @@ jobs:
           node -p "require('./package-lock.json').lockfileVersion"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build docs
         run: npm run docs:build
