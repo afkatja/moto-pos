@@ -48,9 +48,9 @@
     "type-check:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "typedoc && vitepress build docs && cp -r docs/api-typedoc docs/.vitepress/dist/",
-    "docs:preview": "vitepress preview docs",
-    "docs:api": "typedoc"
+    "docs:api": "typedoc && node scripts/rename-typedoc-index.mjs",
+    "docs:build": "npm run docs:api && vitepress build docs && cp -r docs/public/api-typedoc docs/.vitepress/dist/",
+    "docs:preview": "vitepress preview docs"
   },
   "peerDependencies": {
     "react": ">=19",
