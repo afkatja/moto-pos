@@ -8,7 +8,7 @@ export default defineConfig({
     nav: [
       { text: "UI Preview", link: "/ui-preview" },
       { text: "Guide", link: "/guide/getting-started" },
-      { text: "API Reference", link: "/api/index" },
+      { text: "API Reference", link: "/api" },
       { text: "HTTP API", link: "/http-api" },
       { text: "Theming", link: "/theming" },
       { text: "WordPress", link: "/wp-react-integration" },
