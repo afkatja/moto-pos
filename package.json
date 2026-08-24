@@ -4,37 +4,37 @@
   "description": "Standalone MOTO POS module for Stripe payment processing with pluggable idempotency store",
   "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
     "./react": {
-      "import": "./dist/react/index.mjs",
+      "import": "./dist/react/index.js",
       "require": "./dist/react/index.js",
       "types": "./dist/react/index.d.ts"
     },
     "./tokens": {
-      "import": "./dist/tokens/index.mjs",
+      "import": "./dist/tokens/index.js",
       "require": "./dist/tokens/index.js",
       "types": "./dist/tokens/index.d.ts"
     },
     "./tokens.css": "./dist/tokens/tokens.css",
     "./store": {
-      "import": "./dist/store/index.mjs",
+      "import": "./dist/store/index.js",
       "require": "./dist/store/index.js",
       "types": "./dist/store/index.d.ts"
     },
     "./types": {
-      "import": "./dist/types/index.mjs",
+      "import": "./dist/types/index.js",
       "require": "./dist/types/index.js",
       "types": "./dist/types/index.d.ts"
     },
     "./strings": {
-      "import": "./dist/strings/index.mjs",
+      "import": "./dist/strings/index.js",
       "require": "./dist/strings/index.js",
       "types": "./dist/strings/index.d.ts"
     }
@@ -94,5 +94,9 @@
     "vcc",
     "idempotency"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": "https://github.com/afkatja/moto-pos.git",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  }
 }
