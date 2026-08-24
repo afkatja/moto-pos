@@ -15,7 +15,6 @@ export default defineConfig({
     ],
     sidebar: {
       "/guide/": [
-        { text: "UI Preview", link: "/ui-preview" },
         { text: "Getting Started", link: "/guide/getting-started" },
         { text: "Idempotency Stores", link: "/guide/idempotency" },
         { text: "React Components", link: "/guide/react-components" },

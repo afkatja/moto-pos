@@ -39,3 +39,4 @@ vitest.cache/
 
 # Docs
 /docs/.vitepress/cache/
+/docs/public/api-typedoc
