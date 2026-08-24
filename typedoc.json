@@ -1,6 +1,6 @@
 {
   "entryPoints": ["src/index.ts", "src/react/index.ts", "src/store/index.ts", "src/tokens/index.ts", "src/strings/index.ts", "src/types/index.ts", "src/react/primitives/StatusAlert.tsx", "src/strings/StringsContext.tsx"],
-  "out": "docs/api",
+  "out": "docs/api-typedoc",
   "tsconfig": "tsconfig.json",
   "theme": "default",
   "name": "@moto-pos/core",
@@ -13,11 +13,5 @@
   "excludeProtected": true,
   "includeVersion": true,
   "gitRemote": "origin",
-  "gitRevision": "main",
-  "navigationLinks": {
-    "Guide": "../guide/getting-started",
-    "HTTP API": "../http-api",
-    "Theming": "../theming",
-    "WordPress": "../wp-react-integration"
-  }
+  "gitRevision": "main"
 }

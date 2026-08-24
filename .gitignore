@@ -36,3 +36,6 @@ coverage/
 
 # Vitest
 vitest.cache/
+
+# Docs
+/docs/.vitepress/cache/
