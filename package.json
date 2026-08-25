@@ -37,6 +37,21 @@
       "import": "./dist/strings/index.js",
       "require": "./dist/strings/index.js",
       "types": "./dist/strings/index.d.ts"
+    },
+    "./http/next": {
+      "import": "./dist/http/next.js",
+      "require": "./dist/http/next.js",
+      "types": "./dist/http/next.d.ts"
+    },
+    "./adapters/stripe-adapter": {
+      "import": "./dist/adapters/stripe-adapter.js",
+      "require": "./dist/adapters/stripe-adapter.js",
+      "types": "./dist/adapters/stripe-adapter.d.ts"
+    },
+    "./adapters/supabase-auth": {
+      "import": "./dist/adapters/supabase-auth.js",
+      "require": "./dist/adapters/supabase-auth.js",
+      "types": "./dist/adapters/supabase-auth.d.ts"
     }
   },
   "scripts": {
