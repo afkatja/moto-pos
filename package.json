@@ -40,7 +40,7 @@
     }
   },
   "scripts": {
-    "build": "tsc && mkdir -p dist/tokens && cp src/tokens/tokens.css dist/tokens/tokens.css",
+    "build": "tsc && mkdir -p dist/tokens dist/react/primitives && cp src/tokens/tokens.css dist/tokens/tokens.css && cp src/react/primitives/primitives.css dist/react/primitives/primitives.css && cp src/react/MotoChargePanel.css dist/react/MotoChargePanel.css",
     "dev": "vitest --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -54,7 +54,8 @@
   },
   "peerDependencies": {
     "react": ">=19",
-    "stripe": ">=22"
+    "stripe": ">=22",
+    "@tanstack/react-query": ">=5"
   },
   "peerDependenciesMeta": {
     "pg": {
