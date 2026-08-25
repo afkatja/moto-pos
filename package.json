@@ -1,6 +1,6 @@
 {
   "name": "@moto-pos/core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Standalone MOTO POS module for Stripe payment processing with pluggable idempotency store",
   "type": "module",
   "main": "dist/index.js",
