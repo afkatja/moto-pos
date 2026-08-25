@@ -16,6 +16,7 @@ import "./MotoChargePanel.css"
 export interface MotoChargePanelProps {
   defaultAmount?: number
   defaultCurrency?: string
+  idempotencyPrefix?: string
   onSuccess?: (result: { paymentIntentId: string; status: string }) => void
   onError?: (error: Error) => void
   onRequiresAction?: (clientSecret: string, paymentIntentId: string) => void
@@ -33,6 +34,7 @@ const CURRENCY_OPTIONS = [
 export function MotoChargePanel({
   defaultAmount = 0,
   defaultCurrency = "usd",
+  idempotencyPrefix = "booking-vcc",
   onSuccess,
   onError,
   onRequiresAction,
@@ -43,7 +45,6 @@ export function MotoChargePanel({
   const [amount, setAmount] = useState(defaultAmount)
   const [currency, setCurrency] = useState(defaultCurrency)
   const [paymentMethodId, setPaymentMethodId] = useState("")
-  const [idempotencyKey, setIdempotencyKey] = useState("")
   const [alert, setAlert] = useState<{
     variant: "success" | "error" | "warning" | "info"
     title: string
@@ -96,7 +97,7 @@ export function MotoChargePanel({
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      if (!paymentMethodId.trim() || !idempotencyKey.trim()) {
+      if (!paymentMethodId.trim()) {
         setAlert({
           variant: "error",
           title: t("charge.error"),
@@ -106,14 +107,15 @@ export function MotoChargePanel({
       }
 
       const amountCents = Math.round(amount * 100)
+      const generatedIdempotencyKey = `${idempotencyPrefix}:${crypto.randomUUID()}`
       chargeMutation.mutate({
         amount: amountCents,
         currency,
         paymentMethodId: paymentMethodId.trim(),
-        idempotencyKey: idempotencyKey.trim(),
+        idempotencyKey: generatedIdempotencyKey,
       })
     },
-    [amount, currency, paymentMethodId, idempotencyKey, chargeMutation, t],
+    [amount, currency, paymentMethodId, chargeMutation, t, idempotencyPrefix],
   )
 
   const dismissAlert = useCallback(() => {
@@ -166,18 +168,6 @@ export function MotoChargePanel({
               }
               placeholder={t("panel.paymentMethodPlaceholder")}
               helperText={t("panel.paymentMethodHelper")}
-              disabled={disabled || chargeMutation.isPending}
-            />
-
-            <Input
-              label={t("panel.idempotencyKeyLabel")}
-              type="text"
-              value={idempotencyKey}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setIdempotencyKey(e.target.value)
-              }
-              placeholder={t("panel.idempotencyKeyPlaceholder")}
-              helperText={t("panel.idempotencyKeyHelper")}
               disabled={disabled || chargeMutation.isPending}
             />
           </div>
