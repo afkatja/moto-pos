@@ -5,7 +5,7 @@
 ```bash
 npm install @moto-pos/core @tanstack/react-query
 # peer deps:
-npm install react stripe -D
+npm install react stripe @tanstack/react-query
 ```
 
 ## Quick Start (Next.js)

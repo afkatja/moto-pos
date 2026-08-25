@@ -85,7 +85,7 @@ export function ChargeWidget() {
 
 | Feature                  | Benefit                                                          |
 | ------------------------ | ---------------------------------------------------------------- |
-| **Zero runtime deps**    | Only peer dependencies (React, Stripe)                           |
+| **Zero runtime deps**    | Only peer dependencies (React, Stripe, @tanstack/react-query)                           |
 | **Idempotency built-in** | Prevents duplicate charges beyond Stripe's 24h window            |
 | **Framework flexible**   | Use the HTTP handler anywhere, React components in any React app |
 | **Production ready**     | Postgres/Redis/Supabase stores for distributed deployments       |
