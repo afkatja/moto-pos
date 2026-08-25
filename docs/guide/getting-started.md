@@ -48,6 +48,7 @@ export function ChargeWidget({ defaultAmount = 100, defaultCurrency = 'usd' }) {
           <MotoChargePanel
             defaultAmount={defaultAmount * 100} // dollars → cents
             defaultCurrency={defaultCurrency}
+            idempotencyPrefix="booking-vcc" // optional, default: "booking-vcc"
           />
         </div>
       </StringsProvider>

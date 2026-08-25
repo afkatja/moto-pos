@@ -1,4 +1,20 @@
-# Idempotency Stores
+# Idempotency
+
+The module automatically generates idempotency keys to prevent duplicate charges. You can configure the prefix via `MOTO_POS_IDEMPOTENCY_PREFIX` (default: `booking-vcc`).
+
+## Idempotency Key Format
+
+Keys are generated automatically in the format:
+
+```
+{prefix}:{uuid}
+```
+
+**Examples:**
+- `booking-vcc:550e8400-e29b-41d4-a716-446655440000`
+- `booking-vcc:660f9511-f3ac-52e5-b827-557766556611`
+
+## Idempotency Stores
 
 The module accepts an optional `IdempotencyStore` for stronger duplicate-charge protection beyond Stripe's 24h window.
 
@@ -50,15 +66,5 @@ const store = new SupabaseIdempotencyStore({
 })
 await store.initialize()
 ```
-
-## Idempotency Key Format
-
-```
-{prefix}:{internal_id}:{amount_cents}:{currency}
-```
-
-**Examples:**
-- `booking-vcc:res_123:150000:usd`
-- `booking-vcc:manual_abc:50000:eur`
 
 Configure prefix via `MOTO_POS_IDEMPOTENCY_PREFIX` (default: `booking-vcc`).
