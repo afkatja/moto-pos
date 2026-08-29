@@ -1,9 +1,19 @@
 import { defineConfig } from "vitepress"
+import react from "@vitejs/plugin-react"
 
 export default defineConfig({
   base: "/moto-pos/",
   title: "@moto-pos/core",
   description: "Standalone MOTO POS module for Stripe payment processing",
+  vite: {
+    plugins: [react()],
+    optimizeDeps: {
+      include: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
+    },
+    ssr: {
+      noExternal: ["react", "react-dom", "@tanstack/react-query"],
+    },
+  },
   themeConfig: {
     nav: [
       { text: "UI Preview", link: "/ui-preview" },

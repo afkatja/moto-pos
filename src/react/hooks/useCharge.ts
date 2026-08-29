@@ -22,15 +22,25 @@ export function useCharge(options: UseChargeOptions = {}) {
         credentials: "include",
       })
 
-      const data = await response.json()
+      let data: unknown
+      try {
+        data = await response.json()
+      } catch {
+        // Server returned non-JSON (e.g., HTML error page)
+        const error = new Error("Server error: Invalid response format") as Error & {
+          status: number
+        }
+        error.status = response.status || 500
+        throw error
+      }
 
       if (!response.ok) {
-        const error = new Error(data.error || "Charge failed") as Error & {
+        const error = new Error((data as any)?.error || "Charge failed") as Error & {
           status: number
           details?: Array<{ field: string; message: string }>
         }
         error.status = response.status
-        error.details = data.details
+        error.details = (data as any)?.details
         throw error
       }
 
