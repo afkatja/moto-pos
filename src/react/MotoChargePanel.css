@@ -22,16 +22,8 @@
   }
 }
 
-.moto-pos-charge-form-grid > *:nth-child(3),
-.moto-pos-charge-form-grid > *:nth-child(4) {
-  grid-column: span 2;
-}
-
-@media (min-width: 640px) {
-  .moto-pos-charge-form-grid > *:nth-child(3),
-  .moto-pos-charge-form-grid > *:nth-child(4) {
-    grid-column: span 1;
-  }
+.moto-pos-payment-element {
+  margin-top: var(--moto-pos-space-2);
 }
 
 .moto-pos-charge-alert {

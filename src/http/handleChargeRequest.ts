@@ -9,7 +9,6 @@ import type {
   IdempotencyStore,
 } from "../types/index.js"
 import { mergeConfig } from "../config.ts"
-import { createMotoPaymentIntent } from "../adapters/stripe-adapter.ts"
 import { validateChargeInput } from "../core/validation.ts"
 import { createCharge } from "../core/createCharge.ts"
 

@@ -13,6 +13,7 @@ export interface ModuleStrings {
     idempotencyKeyHelper: string
     chargeButton: string
     charging: string
+    processing: string
   }
   charge: {
     success: string
@@ -23,6 +24,8 @@ export interface ModuleStrings {
     failedMessage: (params: { status: string }) => string
     error: string
     missingFields: string
+    stripeNotLoaded: string
+    cardElementMissing: string
   }
 }
 
@@ -41,6 +44,7 @@ export const defaultStrings: ModuleStrings = {
     idempotencyKeyHelper: "Unique key to prevent duplicate charges",
     chargeButton: "Charge",
     charging: "Charging...",
+    processing: "Processing payment...",
   },
   charge: {
     success: "Charge Successful",
@@ -51,5 +55,7 @@ export const defaultStrings: ModuleStrings = {
     failedMessage: ({ status }) => `Payment status: ${status}`,
     error: "Error",
     missingFields: "Payment Method ID and Idempotency Key are required",
+    stripeNotLoaded: "Stripe is not loaded. Please refresh the page.",
+    cardElementMissing: "Card element not found. Please refresh the page.",
   },
 }

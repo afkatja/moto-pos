@@ -3,7 +3,7 @@
 ## Installation
 
 ```bash
-npm install @moto-pos/core @tanstack/react-query
+npm install @moto-pos/core @tanstack/react-query @stripe/stripe-js @stripe/react-stripe-js
 # peer deps:
 npm install react stripe @tanstack/react-query
 ```
@@ -49,6 +49,7 @@ export function ChargeWidget({ defaultAmount = 100, defaultCurrency = 'usd' }) {
             defaultAmount={defaultAmount * 100} // dollars → cents
             defaultCurrency={defaultCurrency}
             idempotencyPrefix="booking-vcc" // optional, default: "booking-vcc"
+            publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
           />
         </div>
       </StringsProvider>
@@ -57,11 +58,22 @@ export function ChargeWidget({ defaultAmount = 100, defaultCurrency = 'usd' }) {
 }
 ```
 
+### How It Works
+
+The `MotoChargePanel` component:
+1. **Initializes Stripe internally** using the provided `publishableKey`
+2. **Wraps itself in Stripe Elements** - no manual `<Elements>` wrapper needed
+3. **Uses `CardElement`** for secure card input (PCI SAQ A compliant)
+4. **Creates a PaymentMethod** on the client via `stripe.createPaymentMethod()`
+5. **Sends the PaymentMethod ID** to your backend `/api/pos/charge` endpoint
+6. **Backend creates a MOTO PaymentIntent** with `payment_method_options.card.moto: true`
+
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `STRIPE_API_KEY` | **required** | Stripe secret key |
+| `STRIPE_API_KEY` | **required** | Stripe secret key (server) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **required** | Stripe publishable key (client) |
 | `MOTO_POS_MAX_AMOUNT_CENTS` | `1000000` | Max charge amount |
 | `MOTO_POS_ALLOWED_CURRENCIES` | `usd,eur,gbp,crc` | Allowed currencies |
 | `MOTO_POS_IDEMPOTENCY_PREFIX` | `booking-vcc` | Idempotency key prefix |

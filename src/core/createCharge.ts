@@ -7,6 +7,7 @@ import type {
   IdempotencyStore,
 } from "../types/index.js"
 import { validateChargeInput } from "./validation.ts"
+import { createMotoPaymentIntent } from "../adapters/stripe-adapter.ts"
 
 const mapStatus = (
   stripeStatus: string,
@@ -74,22 +75,9 @@ export async function createCharge(
     }
   }
 
-  const intent = await stripe.paymentIntents.create(
-    {
-      amount,
-      currency: currency.toLowerCase(),
-      payment_method: paymentMethodId,
-      confirm: true,
-      payment_method_types: ["card"],
-      payment_method_options: {
-        card: {
-          moto: true,
-        },
-      },
-      description,
-      metadata,
-    },
-    { idempotencyKey },
+  const intent = await createMotoPaymentIntent(
+    input,
+    stripe,
   )
 
   const now = Date.now()
@@ -98,8 +86,8 @@ export async function createCharge(
   const record: IdempotencyRecord = {
     key: idempotencyKey,
     status: mappedStatus,
-    paymentIntentId: intent.id,
-    clientSecret: intent.client_secret ?? undefined,
+    paymentIntentId: intent.paymentIntentId,
+    clientSecret: intent.clientSecret,
     amount,
     currency: currency.toLowerCase(),
     createdAt: now,
@@ -113,11 +101,11 @@ export async function createCharge(
 
   const finalStatus = mappedStatus === "pending" ? "failed" : mappedStatus
   const result: ChargeResult = {
-    paymentIntentId: intent.id,
+    paymentIntentId: intent.paymentIntentId,
     status: finalStatus as "succeeded" | "requires_action" | "failed",
   }
-  if (finalStatus === "requires_action" && intent.client_secret) {
-    result.clientSecret = intent.client_secret
+  if (finalStatus === "requires_action" && intent.clientSecret) {
+    result.clientSecret = intent.clientSecret
   }
   return result
 }

@@ -6,7 +6,7 @@ The `@moto-pos/core/react` package provides ready-to-use React components for MO
 
 ### MotoChargePanel
 
-A complete charge form with amount, currency, payment method, and idempotency key fields.
+A complete charge form with amount, currency, and Stripe CardElement for secure card input. The component initializes Stripe internally and wraps itself in Elements - no manual wrapper needed.
 
 ```tsx
 import { MotoChargePanel } from '@moto-pos/core/react'
@@ -17,6 +17,7 @@ function Checkout() {
     <MotoChargePanel
       defaultAmount={1000} // cents
       defaultCurrency="usd"
+      publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
       onSuccess={(result) => console.log('Payment succeeded:', result)}
       onError={(error) => console.error('Payment failed:', error)}
       onRequiresAction={(clientSecret, paymentIntentId) => {
@@ -33,11 +34,20 @@ function Checkout() {
 |------|------|---------|-------------|
 | `defaultAmount` | `number` | `0` | Initial amount in cents |
 | `defaultCurrency` | `string` | `'usd'` | Initial currency code |
+| `publishableKey` | `string` | **required** | Stripe publishable key for client-side Stripe initialization |
+| `idempotencyPrefix` | `string` | `'booking-vcc'` | Prefix for generated idempotency keys |
 | `onSuccess` | `(result) => void` | — | Called on successful payment |
 | `onError` | `(error) => void` | — | Called on payment error |
 | `onRequiresAction` | `(clientSecret, paymentIntentId) => void` | — | Called when SCA is required |
 | `disabled` | `boolean` | `false` | Disable the entire form |
 | `className` | `string` | `''` | Additional CSS classes |
+
+### How MOTO Payment Works
+
+1. **Client creates PaymentMethod** - User enters card details in `CardElement`, component calls `stripe.createPaymentMethod({ type: 'card', card })`
+2. **Client sends PaymentMethod ID** - Component POSTs to `/api/pos/charge` with `amount`, `currency`, `paymentMethodId`, `idempotencyKey`
+3. **Server creates MOTO PaymentIntent** - Backend creates PaymentIntent with `payment_method_options.card.moto: true` and confirms it
+4. **Result returned** - Returns `succeeded`, `requires_action` (3D Secure), or `failed`
 
 ### Primitive Components
 
@@ -113,6 +123,7 @@ export function PaymentWidget() {
           <MotoChargePanel
             defaultAmount={5000}
             defaultCurrency="usd"
+            publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
           />
         </div>
       </StringsProvider>
