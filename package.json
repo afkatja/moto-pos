@@ -1,6 +1,6 @@
 {
   "name": "@moto-pos/core",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Standalone MOTO POS module for Stripe payment processing with pluggable idempotency store",
   "type": "module",
   "main": "dist/index.js",
@@ -62,7 +62,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .ts,.tsx",
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "npm run build -- --watch & vitepress dev docs",
     "docs:api": "typedoc && node scripts/rename-typedoc-index.mjs",
     "docs:build": "npm run docs:api && vitepress build docs && cp -r docs/public/api-typedoc docs/.vitepress/dist/",
     "docs:preview": "vitepress preview docs"

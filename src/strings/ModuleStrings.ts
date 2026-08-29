@@ -14,6 +14,7 @@ export interface ModuleStrings {
     chargeButton: string
     charging: string
     processing: string
+    loadingCardElement: string
   }
   charge: {
     success: string
@@ -26,6 +27,7 @@ export interface ModuleStrings {
     missingFields: string
     stripeNotLoaded: string
     cardElementMissing: string
+    cardElementNotReady: string
   }
 }
 
@@ -45,6 +47,7 @@ export const defaultStrings: ModuleStrings = {
     chargeButton: "Charge",
     charging: "Charging...",
     processing: "Processing payment...",
+    loadingCardElement: "Loading card element...",
   },
   charge: {
     success: "Charge Successful",
@@ -57,5 +60,6 @@ export const defaultStrings: ModuleStrings = {
     missingFields: "Payment Method ID and Idempotency Key are required",
     stripeNotLoaded: "Stripe is not loaded. Please refresh the page.",
     cardElementMissing: "Card element not found. Please refresh the page.",
+    cardElementNotReady: "Card element is still loading. Please wait a moment and try again.",
   },
 }

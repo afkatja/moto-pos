@@ -1,7 +1,53 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { ref, onMounted, onUnmounted, nextTick, computed } from "vue"
+import { createRoot } from "react-dom/client"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import React from "react"
+import { MotoChargePanel } from "@moto-pos/core/react"
+import "@moto-pos/core/tokens.css"
 
-// --- Types ---
+interface Props {
+  defaultAmount?: number
+  defaultCurrency?: string
+  idempotencyPrefix?: string
+  publishableKey: string
+  onSuccess?: (result: { paymentIntentId: string; status: string }) => void
+  onError?: (error: Error) => void
+  onRequiresAction?: (clientSecret: string, paymentIntentId: string) => void
+  className?: string
+  disabled?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  defaultAmount: 100,
+  defaultCurrency: "usd",
+  idempotencyPrefix: "booking-vcc",
+  className: "",
+  disabled: false,
+})
+
+const containerRef = ref<HTMLDivElement>()
+let reactRoot: ReturnType<typeof createRoot> | null = null
+let originalFetch: typeof window.fetch | null = null
+
+// Create a QueryClient for TanStack Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { retry: false },
+  },
+})
+
+// Check if publishable key is valid (not placeholder)
+const isValidKey = computed(
+  () =>
+    props.publishableKey &&
+    (props.publishableKey.startsWith("pk_test_") ||
+      props.publishableKey.startsWith("pk_live_")) &&
+    props.publishableKey !== "pk_test_placeholder",
+)
+
+// --- Mock Stripe Backend (simulates server-side Stripe handling) ---
 interface PaymentIntentResult {
   id: string
   status: "succeeded" | "failed" | "requires_action"
@@ -10,68 +56,136 @@ interface PaymentIntentResult {
   currency: string
 }
 
-interface AlertState {
-  variant: "success" | "error" | "warning" | "info"
-  title: string
-  message: string
+interface IdempotencyRecord {
+  key: string
+  status: "succeeded" | "failed" | "requires_action"
+  paymentIntentId: string
+  clientSecret?: string
+  amount: number
+  currency: string
+  createdAt: number
+  updatedAt: number
+  expiresAt: number
 }
 
-// --- Mock Stripe Adapter (same as HTML demo) ---
 class DemoIdempotencyStore {
-  private store = new Map<string, PaymentIntentResult>()
+  private store = new Map<string, IdempotencyRecord>()
 
-  async get(key: string): Promise<PaymentIntentResult | null> {
-    return this.store.get(key) || null
+  async get(key: string): Promise<IdempotencyRecord | null> {
+    const record = this.store.get(key)
+    if (!record) return null
+    // Check expiration
+    if (Date.now() > record.expiresAt) {
+      this.store.delete(key)
+      return null
+    }
+    return record
   }
 
-  async set(key: string, record: PaymentIntentResult): Promise<void> {
+  async set(key: string, record: IdempotencyRecord): Promise<void> {
     this.store.set(key, { ...record, key })
-  }
-
-  async exists(key: string): Promise<boolean> {
-    return this.store.has(key)
   }
 }
 
 const demoStore = new DemoIdempotencyStore()
 
-const mockStripe = {
-  paymentIntents: {
-    create: async (
-      params: {
-        amount: number
-        currency: string
-        payment_method: string
-      },
-      { idempotencyKey }: { idempotencyKey: string },
-    ): Promise<PaymentIntentResult> => {
-      await new Promise(r => setTimeout(r, 800))
+// Render React component
+function renderReactComponent() {
+  if (!containerRef.value) return
 
-      const existing = await demoStore.get(idempotencyKey)
-      if (existing) return existing
+  if (!reactRoot) {
+    reactRoot = createRoot(containerRef.value)
+  }
 
-      const { amount, payment_method: pm } = params
-      let status: PaymentIntentResult["status"] = "succeeded"
-      let client_secret: string | null = null
+  // Use valid key or show placeholder message in component
+  const publishableKey = isValidKey.value
+    ? props.publishableKey
+    : "pk_test_placeholder"
 
-      if (pm.includes("fail")) status = "failed"
-      else if (pm.includes("3ds") || pm.includes("action")) {
-        status = "requires_action"
-        client_secret = `pi_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`
-      }
+  reactRoot.render(
+    React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      React.createElement(MotoChargePanel, {
+        defaultAmount: props.defaultAmount,
+        defaultCurrency: props.defaultCurrency,
+        idempotencyPrefix: props.idempotencyPrefix,
+        publishableKey,
+        onSuccess: props.onSuccess,
+        onError: props.onError,
+        onRequiresAction: props.onRequiresAction,
+        className: props.className,
+        disabled: props.disabled,
+      }),
+    ),
+  )
+}
 
-      const result: PaymentIntentResult = {
-        id: `pi_${Date.now()}`,
-        status,
-        client_secret,
-        amount,
-        currency: params.currency,
-      }
+// Mock Stripe payment intent creation based on test card numbers
+// Note: In real Stripe, the paymentMethodId (pm_...) is created from card details.
+// For demo purposes, we use a simple heuristic based on the paymentMethodId suffix.
+async function mockCreatePaymentIntent(
+  params: { amount: number; currency: string; payment_method: string },
+  { idempotencyKey }: { idempotencyKey: string },
+): Promise<PaymentIntentResult> {
+  // Simulate network delay
+  await new Promise(r => setTimeout(r, 800))
 
-      await demoStore.set(idempotencyKey, result)
-      return result
-    },
-  },
+  // Check idempotency
+  const existing = await demoStore.get(idempotencyKey)
+  if (existing) {
+    return {
+      id: existing.paymentIntentId,
+      status: existing.status,
+      client_secret: existing.clientSecret,
+      amount: existing.amount,
+      currency: existing.currency,
+    }
+  }
+
+  const { amount, payment_method: pm } = params
+  let status: PaymentIntentResult["status"] = "succeeded"
+  let client_secret: string | null = null
+
+  // Test card behavior based on paymentMethodId suffix (demo heuristic)
+  // Real Stripe test cards: 4242 4242 4242 4242 = success
+  // 4000 0000 0000 0002 = declined (card_declined)
+  // 4000 0000 0000 3220 = 3D Secure required
+  // For demo: use pm_ ID suffix as proxy
+  if (pm.endsWith("0002") || pm.includes("declined") || pm.includes("fail")) {
+    status = "failed"
+  } else if (
+    pm.endsWith("3220") ||
+    pm.includes("3ds") ||
+    pm.includes("action")
+  ) {
+    status = "requires_action"
+    client_secret = `pi_${Date.now()}_secret_${Math.random().toString(36).slice(2)}`
+  }
+
+  const result: PaymentIntentResult = {
+    id: `pi_${Date.now()}`,
+    status,
+    client_secret: client_secret ?? undefined,
+    amount,
+    currency: params.currency,
+  }
+
+  // Store for idempotency
+  const record: IdempotencyRecord = {
+    key: idempotencyKey,
+    status,
+    paymentIntentId: result.id,
+    clientSecret: result.client_secret,
+    amount,
+    currency: params.currency,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+  }
+  await demoStore.set(idempotencyKey, record)
+
+  return result
 }
 
 // --- i18n Strings (matching the React component) ---
@@ -120,374 +234,171 @@ function t(key: string, params?: Record<string, string>): string {
   return key
 }
 
-// --- Currency Options ---
-const CURRENCY_OPTIONS = [
-  { value: "usd", label: "USD ($)" },
-  { value: "eur", label: "EUR (€)" },
-  { value: "gbp", label: "GBP (£)" },
-  { value: "crc", label: "CRC (₡)" },
-] as const
+// Intercept fetch to /api/pos/charge and handle with mock (client-side only)
+onMounted(() => {
+  if (typeof window !== "undefined") {
+    originalFetch = window.fetch
+    window.fetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> => {
+      const url = typeof input === "string" ? input : input.toString()
+      if (url.includes("/api/pos/charge") && init?.method === "POST") {
+        console.log("[Mock API] Intercepted charge request")
+        try {
+          const body = JSON.parse(init.body as string)
+          console.log("[Mock API] Request body:", body)
 
-// --- Reactive State ---
-const amount = ref(150)
-const currency = ref("usd")
-const paymentMethodId = ref("")
-const idempotencyKey = ref("")
-const alert = ref<AlertState | null>(null)
-const isLoading = ref(false)
+          const result = await mockCreatePaymentIntent(
+            {
+              amount: body.amount,
+              currency: body.currency,
+              payment_method: body.paymentMethodId,
+            },
+            { idempotencyKey: body.idempotencyKey },
+          )
 
-// --- Actions ---
-function dismissAlert() {
-  alert.value = null
-}
+          console.log("[Mock API] Response:", result)
 
-async function handleSubmit(e: Event) {
-  e.preventDefault()
-  if (!paymentMethodId.value.trim() || !idempotencyKey.value.trim()) {
-    alert.value = {
-      variant: "error",
-      title: t("charge.error"),
-      message: t("charge.missingFields"),
+          if (result.status === "succeeded") {
+            return new Response(
+              JSON.stringify({
+                paymentIntentId: result.id,
+                status: "succeeded",
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            )
+          }
+
+          if (result.status === "requires_action") {
+            return new Response(
+              JSON.stringify({
+                error: "Payment requires additional authentication (3D Secure)",
+                status: "requires_action",
+                clientSecret: result.client_secret,
+                paymentIntentId: result.id,
+              }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            )
+          }
+
+          return new Response(
+            JSON.stringify({
+              error: `Stripe payment status: ${result.status}`,
+              status: "failed",
+              paymentIntentId: result.id,
+            }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+          )
+        } catch (err) {
+          console.error("[Mock API] Error:", err)
+          return new Response(
+            JSON.stringify({ error: "Internal server error" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          )
+        }
+      }
+      return originalFetch!.apply(window, [input, init] as Parameters<
+        typeof window.fetch
+      >)
     }
-    return
   }
+  renderReactComponent()
+})
 
-  isLoading.value = true
-
-  try {
-    const amountCents = Math.round(amount.value * 100)
-    const result = await mockStripe.paymentIntents.create(
-      {
-        amount: amountCents,
-        currency: currency.value.toLowerCase(),
-        payment_method: paymentMethodId.value.trim(),
-      },
-      { idempotencyKey: idempotencyKey.value.trim() },
-    )
-
-    if (result.status === "succeeded") {
-      alert.value = {
-        variant: "success",
-        title: t("charge.success"),
-        message: t("charge.successMessage", { id: result.id }),
-      }
-    } else if (result.status === "requires_action") {
-      alert.value = {
-        variant: "warning",
-        title: t("charge.requiresAction"),
-        message: t("charge.requiresActionMessage"),
-      }
-    } else {
-      alert.value = {
-        variant: "error",
-        title: t("charge.failed"),
-        message: t("charge.failedMessage", { status: result.status }),
-      }
-    }
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error"
-    alert.value = { variant: "error", title: t("charge.error"), message }
-  } finally {
-    isLoading.value = false
+onUnmounted(() => {
+  // Restore original fetch
+  if (typeof window !== "undefined" && originalFetch) {
+    window.fetch = originalFetch
   }
-}
+  if (reactRoot) {
+    reactRoot.unmount()
+    reactRoot = null
+  }
+})
 </script>
 
 <template>
-  <div class="moto-pos-charge-panel">
-    <div class="moto-pos-charge-header">
-      <h2 class="moto-pos-charge-title">{{ t("panel.title") }}</h2>
+  <div class="moto-pos-charge-panel-wrapper">
+    <div v-if="!isValidKey" class="demo-key-warning">
+      <strong>Demo Mode:</strong> Enter a valid Stripe publishable key (starting
+      with <code>pk_test_</code> or <code>pk_live_</code>) to test the
+      CardElement. Get test keys from
+      <a href="https://dashboard.stripe.com/test/apikeys" target="_blank"
+        >Stripe Dashboard</a
+      >.
     </div>
-
-    <form @submit="handleSubmit" class="moto-pos-charge-form">
-      <div class="moto-pos-charge-form-grid">
-        <div class="form-group">
-          <label for="amount">{{ t("panel.amountLabel") }}</label>
-          <input
-            id="amount"
-            name="amount"
-            type="number"
-            step="0.01"
-            min="0"
-            v-model.number="amount"
-            placeholder="0.00"
-            :disabled="isLoading"
-          />
-          <div class="helper">{{ t("panel.amountHelper") }}</div>
-        </div>
-
-        <div class="form-group">
-          <label for="currency">{{ t("panel.currencyLabel") }}</label>
-          <select
-            id="currency"
-            name="currency"
-            v-model="currency"
-            :disabled="isLoading"
-          >
-            <option value="" disabled>
-              {{ t("panel.currencyPlaceholder") }}
-            </option>
-            <option
-              v-for="opt in CURRENCY_OPTIONS"
-              :key="opt.value"
-              :value="opt.value"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="paymentMethodId">{{
-            t("panel.paymentMethodLabel")
-          }}</label>
-          <input
-            id="paymentMethodId"
-            name="paymentMethodId"
-            type="text"
-            v-model="paymentMethodId"
-            :placeholder="t('panel.paymentMethodPlaceholder')"
-            :disabled="isLoading"
-          />
-          <div class="helper">{{ t("panel.paymentMethodHelper") }}</div>
-        </div>
-
-        <div class="form-group">
-          <label for="idempotencyKey">{{
-            t("panel.idempotencyKeyLabel")
-          }}</label>
-          <input
-            id="idempotencyKey"
-            name="idempotencyKey"
-            type="text"
-            v-model="idempotencyKey"
-            :placeholder="t('panel.idempotencyKeyPlaceholder')"
-            :disabled="isLoading"
-          />
-          <div class="helper">{{ t("panel.idempotencyKeyHelper") }}</div>
-        </div>
-      </div>
-
-      <div
-        v-if="alert"
-        class="alert"
-        :class="`alert-${alert.variant}`"
-        style="
-          display: flex;
-          align-items: flex-start;
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          border-radius: 6px;
-          margin-top: 1rem;
-          animation: slideIn 0.2s ease;
-        "
-      >
-        <div>
-          <div style="font-weight: 600; margin-bottom: 0.25rem">
-            {{ alert.title }}
-          </div>
-          <div>{{ alert.message }}</div>
-        </div>
-        <button
-          @click="dismissAlert"
-          style="
-            background: none;
-            border: none;
-            color: inherit;
-            opacity: 0.6;
-            cursor: pointer;
-            padding: 0;
-            margin-left: auto;
-            font-size: 1.25rem;
-            line-height: 1;
-          "
+    <div ref="containerRef" />
+    <div class="demo-info">
+      <h4>Test Card Numbers:</h4>
+      <ul>
+        <li><code>4242 4242 4242 4242</code> → ✅ Succeeds</li>
+        <li><code>4000 0000 0000 0002</code> → ❌ Declined</li>
+        <li><code>4000 0000 0000 3220</code> → 🔐 Requires 3D Secure</li>
+      </ul>
+      <p>
+        <em
+          >Enter any future expiry date and any 3-digit CVC. The mock backend
+          simulates Stripe MOTO payment processing.</em
         >
-          ×
-        </button>
-      </div>
-
-      <div class="moto-pos-charge-actions">
-        <button
-          type="submit"
-          class="btn btn-primary"
-          :class="{ 'btn-loading': isLoading }"
-          :disabled="isLoading"
-        >
-          <span v-if="isLoading" class="btn-spinner" aria-hidden="true"></span>
-          {{ isLoading ? t("panel.charging") : t("panel.chargeButton") }}
-        </button>
-      </div>
-    </form>
+      </p>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Scoped styles matching the design tokens from @moto-pos/core/tokens.css */
-.moto-pos-charge-panel {
-  background: var(--moto-pos-color-background, #fff);
-  border-radius: var(--moto-pos-radius-lg, 12px);
-  box-shadow: var(--moto-pos-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
-  padding: var(--moto-pos-space-6, 24px);
-  font-family: var(--moto-pos-font-sans, system-ui, sans-serif);
+.moto-pos-charge-panel-wrapper {
+  min-height: 400px;
 }
-
-.moto-pos-charge-header {
-  margin-bottom: var(--moto-pos-space-4, 16px);
-}
-
-.moto-pos-charge-title {
-  margin: 0;
-  font-size: var(--moto-pos-text-xl, 1.25rem);
-  font-weight: var(--moto-pos-font-semibold, 600);
-  color: var(--moto-pos-color-text-primary, #18181b);
-}
-
-.moto-pos-charge-form-grid {
-  display: grid;
-  gap: var(--moto-pos-space-4, 16px);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--moto-pos-space-1, 4px);
-}
-
-.form-group label {
-  font-size: var(--moto-pos-text-sm, 0.875rem);
-  font-weight: var(--moto-pos-font-medium, 500);
-  color: var(--moto-pos-color-text-primary, #18181b);
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: var(--moto-pos-space-2, 8px) var(--moto-pos-space-3, 12px);
-  font-size: var(--moto-pos-text-sm, 0.875rem);
-  border: 1px solid var(--moto-pos-color-border, #e4e4e7);
-  border-radius: var(--moto-pos-radius-sm, 6px);
-  background: var(--moto-pos-color-surface, #fafafa);
-  color: var(--moto-pos-color-text-primary, #18181b);
-  transition:
-    border-color var(--moto-pos-transition-fast, 150ms ease),
-    box-shadow var(--moto-pos-transition-fast, 150ms ease);
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--moto-pos-color-border-focus, #034b25);
-  box-shadow: var(
-    --moto-pos-shadow-focus,
-    0 0 0 3px var(--moto-pos-color-primary-light, #e8f5ee)
-  );
-}
-
-.form-group input:disabled {
-  background: var(--moto-pos-color-surface-hover, #f4f4f5);
-  color: var(--moto-pos-color-text-muted, #a1a1aa);
-  cursor: not-allowed;
-}
-
-.helper {
-  font-size: var(--moto-pos-text-xs, 0.75rem);
-  color: var(--moto-pos-color-text-secondary, #52525b);
-}
-
-/* Alert */
-.alert {
-  margin-top: var(--moto-pos-space-4, 16px);
-  animation: slideIn var(--moto-pos-transition-fast, 150ms ease);
-}
-
-.alert-success {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
-}
-
-.alert-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-}
-
-.alert-warning {
+.demo-key-warning {
+  padding: 1rem;
   background: #fffbeb;
   border: 1px solid #fde68a;
+  border-radius: 6px;
   color: #92400e;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
 }
-
-.alert-info {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
+.demo-key-warning a {
+  color: #034b25;
+  text-decoration: underline;
 }
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.demo-key-warning code {
+  background: #f4f4f5;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: monospace;
 }
-
-/* Button */
-.moto-pos-charge-actions {
-  margin-top: var(--moto-pos-space-4, 16px);
+.demo-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
 }
-
-.btn {
-  width: 100%;
-  padding: var(--moto-pos-space-3, 12px) var(--moto-pos-space-4, 16px);
-  font-size: var(--moto-pos-text-sm, 0.875rem);
-  font-weight: var(--moto-pos-font-semibold, 600);
-  border-radius: var(--moto-pos-radius-sm, 6px);
-  border: none;
-  cursor: pointer;
-  transition:
-    background-color var(--moto-pos-transition-fast, 150ms ease),
-    opacity var(--moto-pos-transition-fast, 150ms ease);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--moto-pos-space-2, 8px);
+.demo-info h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: #374151;
 }
-
-.btn-primary {
-  background: var(--moto-pos-color-primary, #034b25);
-  color: var(--moto-pos-color-text-inverse, #fff);
+.demo-info ul {
+  margin: 0 0 0.5rem 0;
+  padding-left: 1.25rem;
 }
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--moto-pos-color-primary-hover, #023a1d);
+.demo-info li {
+  margin-bottom: 0.25rem;
 }
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.demo-info code {
+  background: #e2e8f0;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8125rem;
 }
-
-.btn-loading {
-  position: relative;
-  color: transparent;
-}
-
-.btn-spinner {
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.demo-info p {
+  margin: 0;
+  color: #64748b;
+  font-style: italic;
 }
 </style>

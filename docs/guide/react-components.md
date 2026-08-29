@@ -15,7 +15,7 @@ import '@moto-pos/core/tokens.css'
 function Checkout() {
   return (
     <MotoChargePanel
-      defaultAmount={1000} // cents
+      defaultAmount={10.99} // USD with decimals (converted to cents internally)
       defaultCurrency="usd"
       publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
       onSuccess={(result) => console.log('Payment succeeded:', result)}
@@ -32,7 +32,7 @@ function Checkout() {
 **Props:**
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `defaultAmount` | `number` | `0` | Initial amount in cents |
+| `defaultAmount` | `number` | `0` | Initial amount in major currency unit (e.g., 10.99 for $10.99) |
 | `defaultCurrency` | `string` | `'usd'` | Initial currency code |
 | `publishableKey` | `string` | **required** | Stripe publishable key for client-side Stripe initialization |
 | `idempotencyPrefix` | `string` | `'booking-vcc'` | Prefix for generated idempotency keys |
@@ -121,7 +121,7 @@ export function PaymentWidget() {
       <StringsProvider>
         <div className="moto-pos">
           <MotoChargePanel
-            defaultAmount={5000}
+            defaultAmount={50.00}
             defaultCurrency="usd"
             publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
           />
