@@ -11,7 +11,7 @@ export default defineConfig({
       include: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
     },
     ssr: {
-      noExternal: ["react", "react-dom", "@tanstack/react-query"],
+      noExternal: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
     },
   },
   themeConfig: {
