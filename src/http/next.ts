@@ -7,9 +7,15 @@ import { handleChargeRequest } from './handleChargeRequest.ts'
 export function createNextRouteHandler(options: HandleChargeOptions) {
   return async function POST(req: any): Promise<any> {
     try {
+      // Next.js 15+ App Router: headers() returns Promise<Headers>
+      // Pages Router: req.headers is already Headers object
+      const headers = typeof req.headers === 'function' 
+        ? await req.headers() 
+        : req.headers
+      
       const httpRequest = {
         method: req.method,
-        headers: req.headers,
+        headers: headers instanceof Headers ? headers : new Headers(headers),
         json: () => req.json(),
       }
 

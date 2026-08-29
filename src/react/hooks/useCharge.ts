@@ -6,18 +6,32 @@ export interface UseChargeOptions extends Omit<
   "mutationFn"
 > {
   endpoint?: string
+  getAuthToken?: () => string | null
 }
 
 export function useCharge(options: UseChargeOptions = {}) {
-  const { endpoint = "/api/pos/charge", ...mutationOptions } = options
+  const { 
+    endpoint = "/api/pos/charge", 
+    getAuthToken,
+    ...mutationOptions 
+  } = options
 
   return useMutation<ChargeResult, Error, ChargeInput>({
     mutationFn: async input => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      }
+      
+      if (getAuthToken) {
+        const token = getAuthToken()
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`
+        }
+      }
+
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(input),
         credentials: "include",
       })

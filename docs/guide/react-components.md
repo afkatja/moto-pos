@@ -11,13 +11,20 @@ A complete charge form with amount, currency, and Stripe CardElement for secure 
 ```tsx
 import { MotoChargePanel } from '@moto-pos/core/react'
 import '@moto-pos/core/tokens.css'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 function Checkout() {
+  const supabase = useSupabaseClient()
+  
   return (
     <MotoChargePanel
       defaultAmount={10.99} // USD with decimals (converted to cents internally)
       defaultCurrency="usd"
       publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
+      // Optional: Custom API endpoint (default: /api/pos/charge)
+      endpoint="/api/pos/charge"
+      // Optional: Provide Supabase auth token for backend authentication
+      getAuthToken={() => supabase.auth.getSession().then(s => s.data.session?.access_token ?? null)}
       onSuccess={(result) => console.log('Payment succeeded:', result)}
       onError={(error) => console.error('Payment failed:', error)}
       onRequiresAction={(clientSecret, paymentIntentId) => {
@@ -36,6 +43,8 @@ function Checkout() {
 | `defaultCurrency` | `string` | `'usd'` | Initial currency code |
 | `publishableKey` | `string` | **required** | Stripe publishable key for client-side Stripe initialization |
 | `idempotencyPrefix` | `string` | `'booking-vcc'` | Prefix for generated idempotency keys |
+| `endpoint` | `string` | `'/api/pos/charge'` | API endpoint for charge requests |
+| `getAuthToken` | `() => string \| null` | — | Function returning Supabase access token for backend auth |
 | `onSuccess` | `(result) => void` | — | Called on successful payment |
 | `onError` | `(error) => void` | — | Called on payment error |
 | `onRequiresAction` | `(clientSecret, paymentIntentId) => void` | — | Called when SCA is required |
@@ -88,9 +97,14 @@ function CustomPaymentForm() {
 
 ```tsx
 import { useCharge } from '@moto-pos/core/react/hooks/useCharge'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
 
 function MyComponent() {
+  const supabase = useSupabaseClient()
+  
   const chargeMutation = useCharge({
+    endpoint: '/api/pos/charge',          // Optional: custom API endpoint
+    getAuthToken: () => supabase.auth.getSession().then(s => s.data.session?.access_token ?? null),
     onSuccess: (result) => {},
     onError: (error) => {},
   })
@@ -103,6 +117,15 @@ function MyComponent() {
   })
 }
 ```
+
+**useCharge Options:**
+| Option | Type | Description |
+|--------|------|-------------|
+| `endpoint` | `string` | API endpoint (default: `/api/pos/charge`) |
+| `getAuthToken` | `() => string \| null` | Function returning Supabase access token |
+| `onSuccess` | `(result) => void` | Called on successful charge |
+| `onError` | `(error) => void` | Called on charge error |
+| `onSettled` | `(result, error) => void` | Called when mutation settles |
 
 ## Complete Example
 

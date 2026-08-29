@@ -17,6 +17,8 @@ export interface MotoChargePanelProps {
   defaultCurrency?: string
   idempotencyPrefix?: string
   publishableKey: string
+  endpoint?: string
+  getAuthToken?: () => string | null
   onSuccess?: (result: { paymentIntentId: string; status: string }) => void
   onError?: (error: Error) => void
   onRequiresAction?: (clientSecret: string, paymentIntentId: string) => void
@@ -29,6 +31,8 @@ export function MotoChargePanel({
   defaultCurrency = "usd",
   idempotencyPrefix = "booking-vcc",
   publishableKey,
+  endpoint,
+  getAuthToken,
   onSuccess,
   onError,
   onRequiresAction,
@@ -73,6 +77,8 @@ export function MotoChargePanel({
         defaultAmount={defaultAmount}
         defaultCurrency={defaultCurrency}
         idempotencyPrefix={idempotencyPrefix}
+        endpoint={endpoint}
+        getAuthToken={getAuthToken}
         onSuccess={onSuccess}
         onError={onError}
         onRequiresAction={onRequiresAction}

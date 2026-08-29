@@ -12,6 +12,8 @@ export interface MotoChargePanelProps {
   defaultAmount?: number
   defaultCurrency?: string
   idempotencyPrefix?: string
+  endpoint?: string
+  getAuthToken?: () => string | null
   onSuccess?: (result: { paymentIntentId: string; status: string }) => void
   onError?: (error: Error) => void
   onRequiresAction?: (clientSecret: string, paymentIntentId: string) => void
@@ -35,6 +37,8 @@ const MotoChargePanelInner = ({
   defaultAmount,
   defaultCurrency,
   idempotencyPrefix,
+  endpoint,
+  getAuthToken,
   onSuccess,
   onError,
   onRequiresAction,
@@ -73,6 +77,8 @@ const MotoChargePanelInner = ({
   // }, [defaultAmount])
 
   const chargeMutation = useCharge({
+    endpoint,
+    getAuthToken,
     onSuccess: (result: {
       paymentIntentId: string
       status: string

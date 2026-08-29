@@ -58,15 +58,49 @@ function Checkout() {
 
 | Prop                | Type                                      | Default         | Description                                                   |
 | ------------------- | ----------------------------------------- | --------------- | ------------------------------------------------------------- |
-| `defaultAmount`     | `number`                                  | `0`             | Initial amount in major currency unit (e.g., 150 for $150.00) |
+| `defaultAmount`     | `number`                                  | `0`             | Initial amount in **major currency unit** (e.g., 150.00 for $150.00) |
 | `defaultCurrency`   | `string`                                  | `'usd'`         | Initial currency code                                         |
 | `publishableKey`    | `string`                                  | **required**    | Stripe publishable key (e.g., `pk_test_...` or `pk_live_...`) |
 | `idempotencyPrefix` | `string`                                  | `'booking-vcc'` | Prefix for generated idempotency keys                         |
+| `endpoint`          | `string`                                  | `'/api/pos/charge'` | API endpoint for charge requests                              |
+| `getAuthToken`      | `() => string \| null`                    | —               | Function returning Supabase access token for backend auth     |
 | `onSuccess`         | `(result) => void`                        | —               | Called on successful payment                                  |
 | `onError`           | `(error) => void`                         | —               | Called on payment error                                       |
 | `onRequiresAction`  | `(clientSecret, paymentIntentId) => void` | —               | Called when 3D Secure is required                             |
 | `disabled`          | `boolean`                                 | `false`         | Disable the entire form                                       |
 | `className`         | `string`                                  | `''`            | Additional CSS classes                                        |
+
+### Authentication
+
+The component uses **Supabase authentication** for the backend. Provide a `getAuthToken` function that returns the user's Supabase access token:
+
+```tsx
+import { MotoChargePanel } from '@moto-pos/core/react'
+import '@moto-pos/core/tokens.css'
+import { useSupabaseClient } from '@supabase/auth-helpers-react'
+
+function Checkout() {
+  const supabase = useSupabaseClient()
+  
+  return (
+    <MotoChargePanel
+      defaultAmount={150.00}
+      defaultCurrency="usd"
+      publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!}
+      endpoint="/api/pos/charge"
+      getAuthToken={() => supabase.auth.getSession().then(s => s.data.session?.access_token ?? null)}
+      onSuccess={result => console.log("Payment succeeded:", result)}
+      onError={error => console.error("Payment failed:", error)}
+      onRequiresAction={(clientSecret, paymentIntentId) => {
+        // Handle 3D Secure / SCA
+        // stripe.handleCardAction(clientSecret)
+      }}
+    />
+  )
+}
+```
+
+If `getAuthToken` is not provided, the request will be sent without an Authorization header. The backend will return a 401 error if authentication is required.
 
 ### Local Testing Setup
 
