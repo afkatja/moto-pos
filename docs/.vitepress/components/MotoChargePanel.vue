@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue"
 import { createRoot } from "react-dom/client"
-import "@moto-pos/core/tokens.css"
 
 interface Props {
   defaultAmount?: number

@@ -1,5 +1,9 @@
 import { defineConfig } from "vitepress"
 import react from "@vitejs/plugin-react"
+import path from "path"
+import { fileURLToPath } from "url"
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   base: "/moto-pos/",
@@ -7,6 +11,11 @@ export default defineConfig({
   description: "Standalone MOTO POS module for Stripe payment processing",
   vite: {
     plugins: [react()],
+    resolve: {
+      alias: {
+        "@moto-pos/core/tokens.css": path.resolve(__dirname, "../../src/tokens/tokens.css"),
+      },
+    },
     optimizeDeps: {
       include: ["react", "react-dom", "@tanstack/react-query"],
     },

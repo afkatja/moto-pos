@@ -10,6 +10,7 @@ import { useStrings } from "@moto-pos/core/strings"
 import { Elements } from "@stripe/react-stripe-js"
 import { loadStripe, type Stripe } from "@stripe/stripe-js"
 import MotoChargePanelInner from "./MotoChargePanelForm.tsx"
+import "../tokens/tokens.css"
 import "./MotoChargePanel.css"
 
 export interface MotoChargePanelProps {
