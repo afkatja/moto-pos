@@ -13,6 +13,11 @@ export default defineConfig({
     ssr: {
       noExternal: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
     },
+    build: {
+      rollupOptions: {
+        external: [],
+      },
+    },
   },
   themeConfig: {
     nav: [
