@@ -90,7 +90,7 @@ async function renderReactComponent() {
     import("react-dom/client"),
     import("react"),
     import("@tanstack/react-query"),
-    import("@moto-pos/core/react"),
+    import("../../../src/react"),
   ])
 
   // Create a QueryClient for TanStack Query

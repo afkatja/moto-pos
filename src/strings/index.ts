@@ -1,2 +1,2 @@
-export * from './ModuleStrings.ts'
-export * from './StringsContext.ts'
+export * from "./ModuleStrings.ts"
+export * from "./StringsContext.tsx"

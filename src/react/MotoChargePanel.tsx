@@ -6,10 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "./primitives/index.ts"
-import { useStrings } from "@moto-pos/core/strings"
 import { Elements } from "@stripe/react-stripe-js"
 import { loadStripe, type Stripe } from "@stripe/stripe-js"
 import MotoChargePanelInner from "./MotoChargePanelForm.tsx"
+import { useStrings } from "../strings/index.ts"
 import "../tokens/tokens.css"
 import "./MotoChargePanel.css"
 

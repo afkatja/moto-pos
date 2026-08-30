@@ -1,7 +1,7 @@
-export * from './primitives/index.ts'
-export { MotoChargePanel } from './MotoChargePanel.ts'
-export type { MotoChargePanelProps } from './MotoChargePanel.ts'
-export { useCharge } from './hooks/useCharge.ts'
-export type { UseChargeOptions } from './hooks/useCharge.ts'
-export { StringsProvider, useStrings } from '../strings/index.ts'
-export type { ModuleStrings } from '../strings/index.ts'
+export * from "./primitives/index.ts"
+export { MotoChargePanel } from "./MotoChargePanel.tsx"
+export type { MotoChargePanelProps } from "./MotoChargePanel.tsx"
+export { useCharge } from "./hooks/useCharge.ts"
+export type { UseChargeOptions } from "./hooks/useCharge.ts"
+export { StringsProvider, useStrings } from "../strings/index.ts"
+export type { ModuleStrings } from "../strings/index.ts"
