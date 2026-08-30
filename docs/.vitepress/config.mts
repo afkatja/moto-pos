@@ -8,15 +8,10 @@ export default defineConfig({
   vite: {
     plugins: [react()],
     optimizeDeps: {
-      include: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
+      include: ["react", "react-dom", "@tanstack/react-query"],
     },
     ssr: {
-      noExternal: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
-    },
-    build: {
-      rollupOptions: {
-        external: [],
-      },
+      noExternal: ["react", "react-dom", "@tanstack/react-query"],
     },
   },
   themeConfig: {

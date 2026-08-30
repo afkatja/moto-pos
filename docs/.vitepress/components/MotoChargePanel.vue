@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue"
+import { ref, onMounted, onUnmounted, computed } from "vue"
 import { createRoot } from "react-dom/client"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import React from "react"
-import { MotoChargePanel } from "@moto-pos/core/react"
 import "@moto-pos/core/tokens.css"
 
 interface Props {
@@ -29,14 +26,6 @@ const props = withDefaults(defineProps<Props>(), {
 const containerRef = ref<HTMLDivElement>()
 let reactRoot: ReturnType<typeof createRoot> | null = null
 let originalFetch: typeof window.fetch | null = null
-
-// Create a QueryClient for TanStack Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false },
-  },
-})
 
 // Check if publishable key is valid (not placeholder)
 const isValidKey = computed(
@@ -90,9 +79,29 @@ class DemoIdempotencyStore {
 const demoStore = new DemoIdempotencyStore()
 
 // Render React component
-function renderReactComponent() {
+async function renderReactComponent() {
   if (!containerRef.value) return
 
+  const [
+    { createRoot },
+    ReactModule,
+    { QueryClient, QueryClientProvider },
+    MotoPosModule,
+  ] = await Promise.all([
+    import("react-dom/client"),
+    import("react"),
+    import("@tanstack/react-query"),
+    import("@moto-pos/core/react"),
+  ])
+
+  // Create a QueryClient for TanStack Query
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+  const React = ReactModule.default
   if (!reactRoot) {
     reactRoot = createRoot(containerRef.value)
   }
@@ -102,6 +111,7 @@ function renderReactComponent() {
     ? props.publishableKey
     : "pk_test_placeholder"
 
+  const { MotoChargePanel } = MotoPosModule
   reactRoot.render(
     React.createElement(
       QueryClientProvider,
@@ -186,52 +196,6 @@ async function mockCreatePaymentIntent(
   await demoStore.set(idempotencyKey, record)
 
   return result
-}
-
-// --- i18n Strings (matching the React component) ---
-const strings = {
-  panel: {
-    title: "Manual Charge",
-    amountLabel: "Amount",
-    amountHelper: "Enter amount in dollars (e.g., 150.00)",
-    currencyLabel: "Currency",
-    currencyPlaceholder: "Select currency",
-    paymentMethodLabel: "Payment Method ID",
-    paymentMethodPlaceholder: "pm_card_visa",
-    paymentMethodHelper:
-      "Use test PM: pm_card_visa, pm_card_visa_fail, pm_card_3ds",
-    idempotencyKeyLabel: "Unique Key",
-    idempotencyKeyPlaceholder: "booking-vcc:res_123:15000:usd",
-    idempotencyKeyHelper: "Format: prefix:id:amount_cents:currency",
-    chargeButton: "Charge",
-    charging: "Processing...",
-  },
-  charge: {
-    success: "Charge Successful",
-    successMessage: "Payment {id} completed",
-    failed: "Charge Failed",
-    failedMessage: "Status: {status}",
-    error: "Error",
-    missingFields: "Payment Method and Unique Key are required",
-    requiresAction: "Additional Authentication Required",
-    requiresActionMessage: "3D Secure authentication needed",
-  },
-}
-
-function t(key: string, params?: Record<string, string>): string {
-  const keys = key.split(".")
-  let value: unknown = strings
-  for (const k of keys) {
-    if (value && typeof value === "object" && k in value) {
-      value = (value as Record<string, unknown>)[k]
-    } else return key
-  }
-  if (typeof value === "function") return (value as Function)(params)
-  if (typeof value === "string") {
-    if (params) return value.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? "")
-    return value
-  }
-  return key
 }
 
 // Intercept fetch to /api/pos/charge and handle with mock (client-side only)
