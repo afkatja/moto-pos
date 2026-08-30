@@ -35,11 +35,19 @@ function extractAdminFromJWT(payload: JWTPayload): boolean {
   return false
 }
 
+export interface CreateSupabaseAuthProviderOptions {
+  supabaseUrl: string
+  serviceRoleKey: string
+  jwtSecret?: string
+  /** Custom function to check if user is admin. Receives user ID and Supabase admin client. */
+  isAdminCheck?: (userId: string, supabaseAdmin: ReturnType<typeof createClient<any, any, any>>) => Promise<boolean>
+}
+
 export function createSupabaseAuthProvider(
-  supabaseUrl: string,
-  serviceRoleKey: string,
-  jwtSecret?: string,
+  options: CreateSupabaseAuthProviderOptions,
 ): AuthProvider {
+  const { supabaseUrl, serviceRoleKey, jwtSecret, isAdminCheck } = options
+
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
@@ -63,10 +71,15 @@ export function createSupabaseAuthProvider(
       try {
         const payload = parseJWT(token)
         if (payload && payload.exp && payload.exp * 1000 > Date.now()) {
+          // If custom admin check provided, use it
+          let isAdmin = extractAdminFromJWT(payload)
+          if (isAdminCheck && !isAdmin) {
+            isAdmin = await isAdminCheck(payload.sub, supabaseAdmin)
+          }
           return {
             id: payload.sub,
             email: payload.email,
-            isAdmin: extractAdminFromJWT(payload),
+            isAdmin,
           }
         }
       } catch {}
@@ -85,11 +98,16 @@ export function createSupabaseAuthProvider(
       throw authError
     }
 
-    const isAdmin = extractAdminFromJWT({
+    // Check admin status - use custom check if provided
+    let isAdmin = extractAdminFromJWT({
       sub: user.id,
       email: user.email,
       app_metadata: user.app_metadata as JWTPayload["app_metadata"],
     })
+    
+    if (isAdminCheck && !isAdmin) {
+      isAdmin = await isAdminCheck(user.id, supabaseAdmin)
+    }
 
     return {
       id: user.id,

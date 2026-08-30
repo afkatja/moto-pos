@@ -65,7 +65,13 @@ export async function handleChargeRequest(
     )
 
     if (result.status === "succeeded") {
-      return { status: 200, body: { paymentIntentId: result.paymentIntentId } }
+      return { 
+        status: 200, 
+        body: { 
+          paymentIntentId: result.paymentIntentId,
+          status: "succeeded"
+        } 
+      }
     }
 
     if (result.status === "requires_action") {
